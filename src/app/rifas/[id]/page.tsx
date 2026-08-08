@@ -9,16 +9,21 @@ import {
   type SorteoRow,
   type TicketConAbonos,
 } from "@/lib/db";
-import { formatMoney, totales } from "@/lib/tickets";
+import { fechaLocal, formatMoney, totales } from "@/lib/tickets";
+import { puedeEliminarse } from "@/lib/rifas";
 import { Header } from "@/components/header";
 import { SorteosForm } from "@/components/sorteos-form";
 import { TicketForm } from "@/components/ticket-form";
 import { TicketsTable } from "@/components/tickets-table";
 import { AbonosPanel } from "@/components/abonos-panel";
+import {
+  EditarRifaForm,
+  EliminarRifaBoton,
+} from "@/components/rifa-acciones";
 
 type PageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ edit?: string; abonos?: string }>;
+  searchParams: Promise<{ edit?: string; abonos?: string; editar?: string }>;
 };
 
 export default async function RifaPage({ params, searchParams }: PageProps) {
@@ -27,7 +32,7 @@ export default async function RifaPage({ params, searchParams }: PageProps) {
 
   const db = getDb();
   const { id } = await params;
-  const { edit, abonos } = await searchParams;
+  const { edit, abonos, editar } = await searchParams;
   const rifaId = Number(id);
 
   const rifa = db.prepare("SELECT * FROM rifas WHERE id = ?").get(rifaId) as
@@ -57,6 +62,10 @@ export default async function RifaPage({ params, searchParams }: PageProps) {
     tickets.map((t) => ({ valorAPagar: t.valor_a_pagar, abonado: t.abonado })),
   );
 
+  const veredicto = puedeEliminarse(sorteos, fechaLocal(new Date()));
+  const bloqueo = veredicto.puede ? null : veredicto.motivo;
+
+  const editandoRifa = editar === "1";
   const editing = tickets.find((t) => t.id === Number(edit));
   const abonando = tickets.find((t) => t.id === Number(abonos));
 
@@ -77,11 +86,39 @@ export default async function RifaPage({ params, searchParams }: PageProps) {
           <Link href="/" className="text-sm text-teal-700">
             ← Volver
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{rifa.nombre}</h1>
-          <p className="text-sm text-slate-500">
-            Valor por número: {formatMoney(rifa.valor_numero)}
-          </p>
+
+          <div className="mt-1 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-semibold">{rifa.nombre}</h1>
+              <p className="text-sm text-slate-500">
+                Valor por número: {formatMoney(rifa.valor_numero)}
+              </p>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <Link
+                href={`/rifas/${rifa.id}?editar=1`}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              >
+                Editar
+              </Link>
+              <EliminarRifaBoton rifa={rifa} bloqueo={bloqueo} />
+            </div>
+          </div>
+
+          {bloqueo ? (
+            <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {bloqueo}
+            </p>
+          ) : null}
         </div>
+
+        {editandoRifa ? (
+          <section className="rounded-2xl border-2 border-teal-600 bg-white p-4 shadow-sm sm:p-6">
+            <h2 className="text-lg font-semibold">Editar rifa</h2>
+            <EditarRifaForm rifa={rifa} />
+          </section>
+        ) : null}
 
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat
@@ -110,14 +147,6 @@ export default async function RifaPage({ params, searchParams }: PageProps) {
         ) : null}
 
         <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-          <h2 className="text-lg font-semibold">Fechas de sorteo</h2>
-          <p className="text-sm text-slate-500">
-            Cada número participa en los 3 sorteos de esta rifa.
-          </p>
-          <SorteosForm rifaId={rifa.id} sorteos={sorteos} />
-        </section>
-
-        <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
           <h2 className="text-lg font-semibold">
             {editing ? `Editar número ${editing.numero}` : "Registrar número"}
           </h2>
@@ -126,6 +155,14 @@ export default async function RifaPage({ params, searchParams }: PageProps) {
             valorNumero={rifa.valor_numero}
             ticket={editing}
           />
+        </section>
+
+        <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
+          <h2 className="text-lg font-semibold">Fechas de sorteo</h2>
+          <p className="text-sm text-slate-500">
+            Cada número participa en los 3 sorteos de esta rifa.
+          </p>
+          <SorteosForm rifaId={rifa.id} sorteos={sorteos} />
         </section>
 
         <section className="space-y-3">

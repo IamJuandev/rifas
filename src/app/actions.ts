@@ -11,6 +11,7 @@ import {
   type RifaRow,
 } from "@/lib/db";
 import { fechaLocal, normalizeNumero, saldo } from "@/lib/tickets";
+import { puedeEliminarse, type SorteoFecha } from "@/lib/rifas";
 
 export type FormState = { error?: string };
 
@@ -83,12 +84,47 @@ export async function crearRifa(
   return {};
 }
 
-export async function eliminarRifa(formData: FormData) {
+export async function actualizarRifa(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
   await requireSession();
 
+  const rifaId = Number(formData.get("rifaId"));
+  const nombre = String(formData.get("nombre") ?? "").trim();
+  const valorNumero = toInt(formData.get("valorNumero"));
+
+  if (!nombre) return { error: "El nombre de la rifa es obligatorio." };
+
+  // Tickets keep the price they were sold at; only new ones use the new value.
   getDb()
-    .prepare("DELETE FROM rifas WHERE id = ?")
-    .run(Number(formData.get("rifaId")));
+    .prepare("UPDATE rifas SET nombre = ?, valor_numero = ? WHERE id = ?")
+    .run(nombre, valorNumero, rifaId);
+
+  revalidatePath(`/rifas/${rifaId}`);
+  revalidatePath("/");
+
+  return {};
+}
+
+export async function eliminarRifa(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  await requireSession();
+
+  const db = getDb();
+  const rifaId = Number(formData.get("rifaId"));
+
+  const sorteos = db
+    .prepare("SELECT orden, fecha FROM sorteos WHERE rifa_id = ? ORDER BY orden")
+    .all(rifaId) as SorteoFecha[];
+
+  // Checked again here: the button can be hidden, the request can still arrive.
+  const veredicto = puedeEliminarse(sorteos, hoy());
+  if (!veredicto.puede) return { error: veredicto.motivo };
+
+  db.prepare("DELETE FROM rifas WHERE id = ?").run(rifaId);
 
   revalidatePath("/");
   redirect("/");
