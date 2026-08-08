@@ -55,3 +55,11 @@ Required environment variables: `SESSION_SECRET`, `ADMIN_PASSWORD`, `ADMIN_USER`
 SQLite file at `data/rifas.db` (override with `DATABASE_PATH`). Schema is created and
 migrated automatically on first connection. Back up by copying that file — stop the
 server first so the WAL is checkpointed.
+
+## Health check
+
+`GET /api/health` returns `{ ok, schemaVersion, adminSince, rifas, tickets, abonos }`.
+
+`adminSince` is the creation timestamp of the seeded admin user. If it changes after a
+redeploy, the volume mounted on `/app/data` is not persisting and the database was rebuilt
+from scratch — that field is the cheapest persistence check available.
