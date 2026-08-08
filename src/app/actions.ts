@@ -167,6 +167,9 @@ export async function guardarTicket(
   const nombre = String(formData.get("nombre") ?? "").trim();
   const telefono = String(formData.get("telefono") ?? "").trim();
   const abonoInicial = toInt(formData.get("abonoInicial"));
+  const apostados = [1, 2, 3].map((n) =>
+    String(formData.get(`apostado_${n}`) ?? "").trim(),
+  );
 
   if (!numero) return { error: "El número debe tener entre 1 y 4 dígitos." };
   if (!nombre) return { error: "El nombre de la persona es obligatorio." };
@@ -185,16 +188,19 @@ export async function guardarTicket(
     if (ticketId) {
       // The price always mirrors the raffle price, so editing never touches it.
       db.prepare(
-        `UPDATE tickets SET numero = ?, nombre = ?, telefono = ?
+        `UPDATE tickets
+         SET numero = ?, nombre = ?, telefono = ?,
+             apostado_1 = ?, apostado_2 = ?, apostado_3 = ?
          WHERE id = ? AND rifa_id = ?`,
-      ).run(numero, nombre, telefono, ticketId, rifaId);
+      ).run(numero, nombre, telefono, ...apostados, ticketId, rifaId);
     } else {
       const tx = db.transaction(() => {
         const inserted = db
           .prepare(
             `INSERT INTO tickets
-               (rifa_id, numeracion, numero, nombre, telefono, valor_a_pagar)
-             VALUES (?, ?, ?, ?, ?, ?)`,
+               (rifa_id, numeracion, numero, nombre, telefono, valor_a_pagar,
+                apostado_1, apostado_2, apostado_3)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
           .run(
             rifaId,
@@ -203,6 +209,7 @@ export async function guardarTicket(
             nombre,
             telefono,
             rifa.valor_numero,
+            ...apostados,
           );
 
         if (abonoInicial > 0) {

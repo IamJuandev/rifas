@@ -51,7 +51,43 @@ describe("database bootstrap", () => {
   });
 
   it("records the current schema version", () => {
-    expect(mod.getDb().pragma("user_version", { simple: true })).toBe(2);
+    expect(mod.getDb().pragma("user_version", { simple: true })).toBe(3);
+  });
+
+  it("gives every ticket three empty apostado notes", () => {
+    const rifaId = crearRifa("Rifa apostado", 20000);
+    const ticketId = crearTicket(rifaId, "0808", 20000);
+
+    const row = mod
+      .getDb()
+      .prepare(
+        "SELECT apostado_1, apostado_2, apostado_3 FROM tickets WHERE id = ?",
+      )
+      .get(ticketId);
+
+    expect(row).toEqual({ apostado_1: "", apostado_2: "", apostado_3: "" });
+  });
+
+  it("stores free-form text in the apostado notes", () => {
+    const db = mod.getDb();
+    const rifaId = crearRifa("Rifa texto libre", 20000);
+    const ticketId = crearTicket(rifaId, "0909", 20000);
+
+    db.prepare(
+      "UPDATE tickets SET apostado_1 = ?, apostado_2 = ?, apostado_3 = ? WHERE id = ?",
+    ).run("2000 efectivo", "2000", "pendiente", ticketId);
+
+    const row = db
+      .prepare(
+        "SELECT apostado_1, apostado_2, apostado_3 FROM tickets WHERE id = ?",
+      )
+      .get(ticketId);
+
+    expect(row).toEqual({
+      apostado_1: "2000 efectivo",
+      apostado_2: "2000",
+      apostado_3: "pendiente",
+    });
   });
 
   it("gives every raffle exactly 3 draw slots", () => {

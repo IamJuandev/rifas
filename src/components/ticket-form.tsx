@@ -117,6 +117,29 @@ export function TicketForm({
         </div>
       )}
 
+      <fieldset className="rounded-xl border border-slate-200 p-3 sm:col-span-2 lg:col-span-3">
+        <legend className="px-1 text-sm font-medium">Apostado por sorteo</legend>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          {([1, 2, 3] as const).map((n) => (
+            <div key={n}>
+              <label
+                htmlFor={`apostado_${n}`}
+                className="block text-xs text-slate-500"
+              >
+                Sorteo {n}
+              </label>
+              <input
+                id={`apostado_${n}`}
+                name={`apostado_${n}`}
+                defaultValue={ticket?.[`apostado_${n}`] ?? ""}
+                className={inputClass}
+              />
+            </div>
+          ))}
+        </div>
+      </fieldset>
+
       {state.error ? (
         <p
           role="alert"

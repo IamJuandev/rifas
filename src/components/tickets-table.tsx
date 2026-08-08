@@ -19,6 +19,25 @@ function Chulito({ pagado }: { pagado: boolean }) {
   );
 }
 
+function Apostado({ ticket }: { ticket: TicketConAbonos }) {
+  const valores = [ticket.apostado_1, ticket.apostado_2, ticket.apostado_3];
+
+  if (valores.every((v) => !v)) {
+    return <span className="text-slate-300">—</span>;
+  }
+
+  return (
+    <ul className="space-y-0.5 text-xs">
+      {valores.map((valor, i) => (
+        <li key={i}>
+          <span className="text-slate-500">S{i + 1}:</span>{" "}
+          <span>{valor || "—"}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Acciones({ ticket }: { ticket: TicketConAbonos }) {
   const pendiente = saldo(ticket.valor_a_pagar, ticket.abonado);
 
@@ -114,6 +133,13 @@ export function TicketsTable({ tickets }: { tickets: TicketConAbonos[] }) {
               </div>
             </dl>
 
+            <div className="mt-3 border-t border-slate-100 pt-2">
+              <p className="text-xs text-slate-500">Apostado por sorteo</p>
+              <div className="mt-1">
+                <Apostado ticket={ticket} />
+              </div>
+            </div>
+
             <div className="mt-3">
               <Acciones ticket={ticket} />
             </div>
@@ -130,6 +156,7 @@ export function TicketsTable({ tickets }: { tickets: TicketConAbonos[] }) {
               <th className="px-4 py-3">Número</th>
               <th className="px-4 py-3">Nombre</th>
               <th className="px-4 py-3">Teléfono</th>
+              <th className="px-4 py-3">Apostado</th>
               <th className="px-4 py-3 text-right">A pagar</th>
               <th className="px-4 py-3 text-right">Abonado</th>
               <th className="px-4 py-3 text-right">Saldo</th>
@@ -146,6 +173,9 @@ export function TicketsTable({ tickets }: { tickets: TicketConAbonos[] }) {
                 </td>
                 <td className="px-4 py-3">{ticket.nombre}</td>
                 <td className="px-4 py-3">{ticket.telefono}</td>
+                <td className="px-4 py-3">
+                  <Apostado ticket={ticket} />
+                </td>
                 <td className="px-4 py-3 text-right">
                   {formatMoney(ticket.valor_a_pagar)}
                 </td>

@@ -21,7 +21,7 @@ function createConnection() {
   return connection;
 }
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 function migrate(connection: Database.Database) {
   const current = connection.pragma("user_version", {
@@ -30,6 +30,7 @@ function migrate(connection: Database.Database) {
 
   if (current < 1) migrateToV1(connection);
   if (current < 2) migrateToV2(connection);
+  if (current < 3) migrateToV3(connection);
 
   connection.pragma(`user_version = ${SCHEMA_VERSION}`);
 }
@@ -111,6 +112,19 @@ function migrateToV2(connection: Database.Database) {
   tx();
 }
 
+/**
+ * Free-form "apostado" note per draw. The client asked for the fields without
+ * explaining what goes in them, so they stay TEXT: any content fits, and no
+ * data is lost when the meaning is finally pinned down.
+ */
+function migrateToV3(connection: Database.Database) {
+  connection.exec(`
+    ALTER TABLE tickets ADD COLUMN apostado_1 TEXT NOT NULL DEFAULT '';
+    ALTER TABLE tickets ADD COLUMN apostado_2 TEXT NOT NULL DEFAULT '';
+    ALTER TABLE tickets ADD COLUMN apostado_3 TEXT NOT NULL DEFAULT '';
+  `);
+}
+
 function seedAdmin(connection: Database.Database) {
   const username = process.env.ADMIN_USER ?? "admin";
   const password = process.env.ADMIN_PASSWORD;
@@ -182,6 +196,9 @@ export type TicketRow = {
   nombre: string;
   telefono: string;
   valor_a_pagar: number;
+  apostado_1: string;
+  apostado_2: string;
+  apostado_3: string;
   created_at: string;
 };
 
