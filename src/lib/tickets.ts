@@ -25,11 +25,15 @@ export function estaPagado(valorAPagar: number, abonado: number): boolean {
 }
 
 export function formatMoney(value: number): string {
-  return new Intl.NumberFormat("es-CO", {
+  const formatted = new Intl.NumberFormat("es-CO", {
     style: "currency",
     currency: "COP",
     maximumFractionDigits: 0,
   }).format(value);
+
+  // Intl separates the symbol with a non-breaking space, which travels badly
+  // when the text is copied into WhatsApp or a spreadsheet.
+  return formatted.replace(/[  ]/g, " ");
 }
 
 /**

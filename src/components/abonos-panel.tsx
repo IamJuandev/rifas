@@ -3,17 +3,30 @@ import { eliminarAbono } from "@/app/actions";
 import type { AbonoRow, TicketConAbonos } from "@/lib/db";
 import { formatFecha, formatMoney, saldo } from "@/lib/tickets";
 import { AbonoForm } from "@/components/abono-form";
+import { CopiarMensaje } from "@/components/copiar-mensaje";
+import { linkWhatsApp, mensajeEstado } from "@/lib/mensajes";
 
 export function AbonosPanel({
   rifaId,
   ticket,
   abonos,
+  fechasSorteo,
 }: {
   rifaId: number;
   ticket: TicketConAbonos;
   abonos: AbonoRow[];
+  fechasSorteo: Array<string | null>;
 }) {
   const pendiente = saldo(ticket.valor_a_pagar, ticket.abonado);
+
+  // The panel follows a deposit, so the message announces the latest one.
+  const mensaje = mensajeEstado({
+    numero: ticket.numero,
+    valorAPagar: ticket.valor_a_pagar,
+    abonado: ticket.abonado,
+    ultimoAbono: abonos[0]?.monto,
+    fechasSorteo,
+  });
 
   return (
     <section className="rounded-2xl border-2 border-teal-600 bg-white p-4 shadow-sm sm:p-6">
@@ -60,6 +73,14 @@ export function AbonosPanel({
           Este número ya está pago por completo.
         </p>
       )}
+
+      <div className="mt-4 rounded-xl border border-slate-200 p-3">
+        <p className="text-sm font-medium">Mensaje para el cliente</p>
+        <CopiarMensaje
+          mensaje={mensaje}
+          whatsapp={linkWhatsApp(ticket.telefono, mensaje)}
+        />
+      </div>
 
       <h3 className="mt-6 text-sm font-semibold uppercase text-slate-500">
         Histórico

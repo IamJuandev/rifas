@@ -3,6 +3,8 @@ import { abonarSaldo, eliminarTicket } from "@/app/actions";
 import type { TicketConAbonos } from "@/lib/db";
 import { estaPagado, formatMoney, saldo } from "@/lib/tickets";
 import { DeleteButton } from "@/components/delete-button";
+import { CopiarMensaje } from "@/components/copiar-mensaje";
+import { linkWhatsApp, mensajeEstado } from "@/lib/mensajes";
 
 function Chulito({ pagado }: { pagado: boolean }) {
   return (
@@ -81,7 +83,36 @@ function Acciones({ ticket }: { ticket: TicketConAbonos }) {
   );
 }
 
-export function TicketsTable({ tickets }: { tickets: TicketConAbonos[] }) {
+function Mensaje({
+  ticket,
+  fechasSorteo,
+}: {
+  ticket: TicketConAbonos;
+  fechasSorteo: Array<string | null>;
+}) {
+  const texto = mensajeEstado({
+    numero: ticket.numero,
+    valorAPagar: ticket.valor_a_pagar,
+    abonado: ticket.abonado,
+    fechasSorteo,
+  });
+
+  return (
+    <CopiarMensaje
+      mensaje={texto}
+      whatsapp={linkWhatsApp(ticket.telefono, texto)}
+      compacto
+    />
+  );
+}
+
+export function TicketsTable({
+  tickets,
+  fechasSorteo,
+}: {
+  tickets: TicketConAbonos[];
+  fechasSorteo: Array<string | null>;
+}) {
   if (tickets.length === 0) {
     return (
       <p className="rounded-2xl bg-white p-6 text-center text-sm text-slate-500 shadow-sm">
@@ -143,6 +174,10 @@ export function TicketsTable({ tickets }: { tickets: TicketConAbonos[] }) {
             <div className="mt-3">
               <Acciones ticket={ticket} />
             </div>
+
+            <div className="mt-2">
+              <Mensaje ticket={ticket} fechasSorteo={fechasSorteo} />
+            </div>
           </li>
         ))}
       </ul>
@@ -194,6 +229,9 @@ export function TicketsTable({ tickets }: { tickets: TicketConAbonos[] }) {
                 </td>
                 <td className="px-4 py-3">
                   <Acciones ticket={ticket} />
+                  <div className="mt-2">
+                    <Mensaje ticket={ticket} fechasSorteo={fechasSorteo} />
+                  </div>
                 </td>
               </tr>
             ))}

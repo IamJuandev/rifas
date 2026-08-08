@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   estaPagado,
+  formatMoney,
   fechaLocal,
   formatFecha,
   normalizeNumero,
@@ -99,5 +100,12 @@ describe("totales", () => {
       recaudado: 0,
       pendiente: 0,
     });
+  });
+});
+
+describe("formatMoney", () => {
+  it("uses a plain space so the text survives a copy-paste", () => {
+    expect(formatMoney(30000)).toBe("$ 30.000");
+    expect(formatMoney(0)).toBe("$ 0");
   });
 });

@@ -65,6 +65,7 @@ export default async function RifaPage({ params, searchParams }: PageProps) {
   const veredicto = puedeEliminarse(sorteos, fechaLocal(new Date()));
   const bloqueo = veredicto.puede ? null : veredicto.motivo;
 
+  const fechasSorteo = sorteos.map((s) => s.fecha);
   const editandoRifa = editar === "1";
   const editing = tickets.find((t) => t.id === Number(edit));
   const abonando = tickets.find((t) => t.id === Number(abonos));
@@ -143,6 +144,7 @@ export default async function RifaPage({ params, searchParams }: PageProps) {
             rifaId={rifa.id}
             ticket={abonando}
             abonos={historico}
+            fechasSorteo={fechasSorteo}
           />
         ) : null}
 
@@ -167,7 +169,7 @@ export default async function RifaPage({ params, searchParams }: PageProps) {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Números</h2>
-          <TicketsTable tickets={tickets} />
+          <TicketsTable tickets={tickets} fechasSorteo={fechasSorteo} />
         </section>
       </main>
     </>
